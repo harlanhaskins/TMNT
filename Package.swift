@@ -5,6 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "TMNT",
+    platforms: [.macOS(.v13)],
     dependencies: [
         .package(url: "https://github.com/harlanhaskins/CMUDict.git", from: "0.0.1")
     ],

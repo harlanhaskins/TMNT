@@ -1,4 +1,5 @@
 import CMUDict
+import Foundation
 
 @main
 struct Main {
@@ -31,10 +32,54 @@ struct Main {
             "very good pronunciation"
         ]
         for phrase in phrases {
-            if !phrase.isSingable {
-                print("\(phrase) is not singable")
+            if !phrase.isSingable(to: .tmnt) {
+                print("\(phrase) is not singable to TMNT")
             }
         }
+        
+        let spongebobPhrases = [
+            "Who lives in a pineapple under the sea",
+            "your heart is a muscle the size of a rat",
+            "that sways me to allergies over a cold",
+            "am ready to blab at the drop of a hat",
+            "the british museum and sandwich and chai",
+        ]
+        for phrase in spongebobPhrases {
+            if !phrase.isSingable(to: .spongebob) {
+                print("\(phrase) is not singable to SpongeBob: \(singabilityDescription(phrase))")
+            }
+        }
+        
+        // Wikipedia title parsing
+        /*
+        let file = URL(filePath: "/Users/harlan/Downloads/enwiki-latest-all-titles-in-ns0.txt")
+        let contents = try Data(contentsOf: file, options: .mappedIfSafe)
+        var index = contents.startIndex
+        while index < contents.endIndex {
+            var endIndex = index
+            while contents[endIndex] != 10 && endIndex < contents.endIndex {
+                endIndex = contents.index(after: endIndex)
+            }
+            var lineString = String(decoding: contents[index..<endIndex], as: UTF8.self)
+            lineString.replace("_", with: " ")
+            lineString.replace(",", with: " ")
+            if lineString.first == "\"" && lineString.last == "\"" {
+                lineString.removeFirst()
+                if !lineString.isEmpty {
+                    lineString.removeLast()
+                }
+            }
+            var testString = lineString
+            testString.removeAll(where: { $0 == "(" || $0 == ")" })
+            if testString.isSingable(to: .tmnt) {
+                if testString.hasPrefix("Boris") {
+                    print("what")
+                }
+                print(lineString)
+            }
+            index = contents.index(after: endIndex)
+        }
+         */
     }
 }
 
@@ -66,6 +111,7 @@ extension StressPatternElement {
 
 struct StressPattern {
     static let tmnt = StressPattern(elements: [.stressed, .unstressed, .stressed, .unstressed, .stressed, .unstressed, .stressed, .unstressed])
+    static let spongebob = StressPattern(elements: [.unstressed, .stressed, .unstressed, .unstressed, .stressed, .unstressed, .unstressed, .stressed, .unstressed, .unstressed, .stressed])
     var elements: [StressPatternElement]
     
     init(elements: [StressPatternElement]) {
@@ -119,21 +165,50 @@ extension Pronunciation {
 }
 
 extension String {
-    var isSingable: Bool {
-        var pattern = StressPattern.tmnt
-        for word in self.components(separatedBy: .letters.inverted) {
+    static let overrideStressPatterns: [String: StressPattern] = [
+        "the": StressPattern(elements: [.unstressed]),
+        "a": StressPattern(elements: [.unstressed])
+    ]
+    func isSingable(to pattern: StressPattern) -> Bool {
+        var pattern = pattern
+        var chosenPronunciations = [String: StressPattern]()
+        for word in self.components(separatedBy: .alphanumerics.union(CharacterSet(charactersIn: "'")).inverted) {
             if word.isEmpty { continue }
             var matched = false
-            for pronunciation in Pronunciation.pronunciations(for: word) {
-                if pattern.consumeIfFrontMatches(pronunciation.stressPattern) {
-                    matched = true
-                    break
+            let word = String(word)
+
+            func handlePattern(_ pronunciationPattern: StressPattern) -> Bool {
+                if pattern.consumeIfFrontMatches(pronunciationPattern) {
+                    chosenPronunciations[word] = pronunciationPattern
+                    return true
+                }
+                return false
+            }
+            
+            if let override = Self.overrideStressPatterns[word] {
+                matched = handlePattern(override)
+            } else {
+                for pronunciation in Pronunciation.pronunciations(for: word) {
+                    if handlePattern(pronunciation.stressPattern) {
+                        matched = true
+                        break
+                    }
                 }
             }
+            
             if !matched {
                 return false
             }
         }
-        return pattern.elements.isEmpty
+        
+        if pattern.elements.count > 0 {
+            return false
+        }
+        
+        if chosenPronunciations.allSatisfy({ $0.value.elements == [.any] }) {
+            return false
+        }
+        
+        return true
     }
 }

@@ -1,13 +1,13 @@
 {
-  "originHash" : "eb3bab6a82d82c145dea54cd5aee677ed0fce9876a809d8f097508032ce1ac9a",
+  "originHash" : "10d60ad0fd8a7286128ddb2cc4868e724a7c4660a10891dafcaf1a0a1781b07c",
   "pins" : [
     {
       "identity" : "cmudict",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/harlanhaskins/CMUDict.git",
       "state" : {
-        "revision" : "f887978abdfbc17684acb3e5b67d3245eb896fd3",
-        "version" : "0.0.1"
+        "revision" : "42e9ea06b71374ee6e4800a93530e12a726fcb14",
+        "version" : "0.0.2"
       }
     }
   ],
